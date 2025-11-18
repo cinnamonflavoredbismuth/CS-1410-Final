@@ -7,8 +7,10 @@ from pygame import mixer
 pygame.init()
 clock = pygame.time.Clocke()
 
+size=(149,598)
+
 background = pygame.image.load('tbd')
-background = pygame.transform.scale(background, (800, 600))
+background = pygame.transform.scale(background, size)
 
 # Score text
 score_font = pygame.font.Font('tbd', 32)
@@ -76,12 +78,34 @@ class OnScreen:
     
 
 class PowerUp(OnScreen):
-    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
+    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, state, sound):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+        self.state=state
+        self.sound=sound
+
+    @abstractmethod
+    def effect(self,theme):
+        pass
 
 class Runner(OnScreen):
-    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
+    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier=0, rect=None,jumpHeight=None,state=True,invincible=False):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+        self.jumpHeight=jumpHeight
+        self.state=state
+        self.invincible=invincible
+    def walk(self):
+        pass #animation for walking
+    def crouch(self):
+        pass #animation for crouching
+    def die(self):
+        pass #animation for dying
+    def jump(self):
+        for x in self.jumpHeight:
+            self.y+=0.3
+        for x in self.jumpHeight:
+            self.y-=0.3
+    def invincibility_frames(self):
+        pass #invincibility frames animation
 
 class Clouds(OnScreen):
     def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
@@ -94,6 +118,7 @@ class Ground(OnScreen):
 class Background(OnScreen):
     def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+        
 
 class Cactus(OnScreen):
     def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
@@ -121,11 +146,11 @@ class Theme:
             object.colorChange()
 
     def collision_check(self):
-
-        if self.runner.collisionCheck(self.cactus):
-            pass # make player death function
+        if not self.runner.invincible:
+            if self.runner.collisionCheck(self.cactus):
+                pass # make player death function
         elif self.runner.collisionCheck(self.power_up):
-            self.runner.effect(self.power_up.effect) # update later. figure out how powerups are gonna work
+            self.power_up.effect(self) # update later. figure out how powerups are gonna work
             self.power_up.state=False
         else: return 0
 
