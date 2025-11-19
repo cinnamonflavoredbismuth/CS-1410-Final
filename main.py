@@ -9,7 +9,7 @@ clock = pygame.time.Clocke()
 
 size=(149,598)
 
-background = pygame.image.load('tbd')
+background = pygame.image.load('resources/light_bg.png')
 background = pygame.transform.scale(background, size)
 
 # Score text
@@ -19,9 +19,9 @@ font_location = (10, 10)
 
 mixer.music.load('tbd')
 
-# Set up display
+# Set up display 
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption("T-Rex runner")
+pygame.display.set_caption("T-Rex runner") 
 pygame_icon = pygame.image.load('tbd')
 
 # 32 x 32 px image
