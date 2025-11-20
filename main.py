@@ -88,7 +88,7 @@ class PowerUp(OnScreen):
         pass
 
 class Runner(OnScreen):
-    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier=0, rect=None,jumpHeight=None,state=True,invincible=False):
+    def __init__(self, name='dino', x=598-16+64/2, y=598+24+64/2, image="resources/light_neutral.png", firstImage="resources\light_neutral.png", secondaryImage="resources\dark_neutral.png", screenSpeed=0, speedModifier=0, rect=None,jumpHeight=None,state=True,invincible=False):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
         self.jumpHeight=jumpHeight
         self.state=state
