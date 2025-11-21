@@ -5,24 +5,23 @@ import pygame
 from pygame import mixer
 
 pygame.init()
-clock = pygame.time.Clocke()
+clock = pygame.time.Clock()
 
-size=(149,598)
+size=(598,149)
 
 background = pygame.image.load('resources/light_bg.png')
 background = pygame.transform.scale(background, size)
 
 # Score text
-score_font = pygame.font.Font('tbd', 32)
+score_font = pygame.font.Font(None, 32)
 font_color = (255, 255, 255)
 font_location = (10, 10)
 
-mixer.music.load('tbd')
 
 # Set up display 
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode(size)
 pygame.display.set_caption("T-Rex runner") 
-pygame_icon = pygame.image.load('tbd')
+pygame_icon = pygame.image.load('resources/light_neutral.png')
 
 # 32 x 32 px image
 pygame.display.set_icon(pygame_icon)
@@ -49,13 +48,18 @@ class Button:
         screen.blit(self.img, (self.x, self.y))
 
 class OnScreen:
-    def __init__(self,name,x,y,image,firstImage,secondaryImage,screenSpeed,speedModifier,rect):
+    def __init__(self,name='basic class',x=0,y=0,image='resources/light_neutral.png',firstImage='resources/light_neutral.png',secondaryImage='resources/light_neutral.png',screenSpeed=0,speedModifier=0,rect=None,scale=1):
         self.name=name
         self.x=x
         self.y=y
-        self.image=image
-        self.firstImage=firstImage
-        self.secondaryImage=secondaryImage
+        self.img=pygame.image.load(image)
+        width = self.img.get_width()
+        height = self.img.get_height()
+        
+        self.image=pygame.transform.scale(self.img, (int(width * scale), int(height * scale)))
+
+        self.firstImage=pygame.image.load(firstImage)
+        self.secondaryImage=pygame.image.load(secondaryImage)
         self.screenSpeed=screenSpeed
         self.speedModifier=speedModifier
         self.rect=rect
@@ -78,8 +82,8 @@ class OnScreen:
     
 
 class PowerUp(OnScreen):
-    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, state, sound):
-        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+    def __init__(self, name="powerup", x=100, y=100, image='resources/light_neutral.png', firstImage='resources/light_neutral.png', secondaryImage='resources/light_neutral.png', screenSpeed=0, speedModifier=1, rect=None, state=False, sound=None,scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.state=state
         self.sound=sound
 
@@ -88,8 +92,8 @@ class PowerUp(OnScreen):
         pass
 
 class Runner(OnScreen):
-    def __init__(self, name='dino', x=598-16+64/2, y=598+24+64/2, image="resources/light_neutral.png", firstImage="resources\light_neutral.png", secondaryImage="resources\dark_neutral.png", screenSpeed=0, speedModifier=0, rect=None,jumpHeight=None,state=True,invincible=False):
-        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+    def __init__(self, name='dino', x=500, y=10, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", screenSpeed=0, speedModifier=0, rect=None,jumpHeight=None,state=True,invincible=False,scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.jumpHeight=jumpHeight
         self.state=state
         self.invincible=invincible
@@ -108,22 +112,23 @@ class Runner(OnScreen):
         pass #invincibility frames animation
 
 class Clouds(OnScreen):
-    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
-        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+    def __init__(self, name='cloud', x=10, y=0, image='resources/light_clouds.png', firstImage='resources/light_clouds.png', secondaryImage='resources/dark_moon.png', screenSpeed=0, speedModifier=0.5, rect=None,scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
 
 class Ground(OnScreen):
-    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
-        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+    def __init__(self, name='ground', x=0, y=121, image='resources/light_ground.png', firstImage='resources/light_ground.png', secondaryImage='resources/dark_ground.png', screenSpeed=0, speedModifier=1, rect=None,scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
 
 class Background(OnScreen):
-    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
-        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+    def __init__(self, name='background', x=0, y=0, image='resources/light_bg.png', firstImage='resources/light_bg.png', secondaryImage='resources/dark_bg.png', screenSpeed=0, speedModifier=0, rect=None,scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         
 
 class Cactus(OnScreen):
-    def __init__(self, name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect):
-        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
+    def __init__(self, name='cactus', x=500, y=0, image='resources/light_cactus_big_single.png', firstImage='resources/light_cactus_big_single.png', secondaryImage='resources/dark_cactus_big_single.png', screenSpeed=0, speedModifier=1, rect=None,scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
 
+#'''
 class Theme:
     def __init__(self,cactus_options = [],power_up_options = [],runner = Runner(),clouds = Clouds(),ground = Ground(),background = Background(),power_up = PowerUp(),cactus=Cactus()):
 
@@ -135,7 +140,7 @@ class Theme:
         self.background=background
         self.power_up=power_up
         self.cactus=cactus
-        self.objects= [self.cactus_options,self.power_up_options,self.runner,self.clouds,self.ground,self.background,self.power_up,self.cactus]
+        self.objects= [self.background,self.ground,self.clouds,self.runner,self.power_up,self.cactus]
 
     def change_speed(self,speed):
         for object in self.objects:
@@ -156,14 +161,17 @@ class Theme:
 
     def show_all(self):
         for object in self.objects:
-            if object == self.power_up:
+            if type(object)==list:
+                pass
+            elif object == self.power_up:
                 if object.state == True:
+                    
                     object.show()
                 else: pass
             else:
                 object.show()
 
-        
+#       ''' 
 
 running = True
 speed=0
@@ -190,8 +198,11 @@ while running:
 
     # detect collision here
 
-    # 
+    # show items
+    on_screen.show_all()
 
+    # update screen
+    pygame.display.flip()
     
                 
 
