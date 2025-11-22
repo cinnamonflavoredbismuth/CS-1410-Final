@@ -13,16 +13,15 @@ background = pygame.image.load('resources/light_bg.png')
 background = pygame.transform.scale(background, size)
 
 # Score text
-score_font = pygame.font.Font('tbd', 32)
+score_font = pygame.font.Font(None, 32)
 font_color = (255, 255, 255)
 font_location = (10, 10)
 
-mixer.music.load('tbd')
 
 # Set up display 
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("T-Rex runner") 
-pygame_icon = pygame.image.load('tbd')
+pygame_icon = pygame.image.load('resources/light_neutral.png')
 
 # 32 x 32 px image
 pygame.display.set_icon(pygame_icon)
@@ -88,7 +87,7 @@ class PowerUp(OnScreen):
         pass
 
 class Runner(OnScreen):
-    def __init__(self, name='dino', x=598-16+64/2, y=598+24+64/2, image="resources/light_neutral.png", firstImage="resources\light_neutral.png", secondaryImage="resources\dark_neutral.png", screenSpeed=0, speedModifier=0, rect=None,jumpHeight=None,state=True,invincible=False):
+    def __init__(self, name='dino', x=598-16+64/2, y=598+24+64/2, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", screenSpeed=0, speedModifier=0, rect=None,jumpHeight=None,state=True,invincible=False):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect)
         self.jumpHeight=jumpHeight
         self.state=state
