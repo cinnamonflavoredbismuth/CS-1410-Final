@@ -9,13 +9,9 @@ clock = pygame.time.Clock()
 
 size=(598,149)
 
-background = pygame.image.load('resources/light_bg.png')
-background = pygame.transform.scale(background, size)
 
 # Score text
-score_font = pygame.font.Font(None, 32)
-font_color = (255, 255, 255)
-font_location = (10, 10)
+
 
 
 # Set up display 
@@ -50,6 +46,7 @@ class Button:
 class OnScreen:
     def __init__(self,name='basic class',x=0,y=0,image='resources/light_neutral.png',firstImage='resources/light_neutral.png',secondaryImage='resources/light_neutral.png',screenSpeed=0,speedModifier=0,rect=None,scale=1):
         self.name=name
+        self.ogX=x
         self.x=x
         self.y=y
         self.img=pygame.image.load(image)
@@ -62,14 +59,19 @@ class OnScreen:
         self.secondaryImage=pygame.image.load(secondaryImage)
         self.screenSpeed=screenSpeed
         self.speedModifier=speedModifier
-        self.rect=rect
+        self.rect=self.image.get_rect() #temporary
 
+    def move(self):
+        if self.x>=(0-self.rect[2]):
+            speed=self.screenSpeed*self.speedModifier
+            self.x-=speed
+        else: self.x=600
+           
     def show(self):
+        self.move()
         screen.blit(self.image,(self.x,self.y))
     
-    def move(self):
-        speed=self.screenSpeed*self.speedModifier
-        self.x-=speed
+    
 
     def colorChange(self):
         if self.image==self.firstImage:
@@ -92,27 +94,60 @@ class PowerUp(OnScreen):
         pass
 
 class Runner(OnScreen):
-    def __init__(self, name='dino', x=500, y=10, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", screenSpeed=0, speedModifier=0, rect=None,jumpHeight=None,state=True,invincible=False,scale=1):
+    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',
+                 
+                 screenSpeed=0, speedModifier=0, rect=None,jumpHeight=155,state=True,invincible=False,scale=1,direction='up',):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.jumpHeight=jumpHeight
         self.state=state
         self.invincible=invincible
+        self.direction=direction
+        self.frame1=pygame.image.load(frame1)
+        self.frame2=pygame.image.load(frame2)
+        self.crouch1=pygame.image.load(crouch1)
+        self.crouch2=pygame.image.load(crouch2)
+    def jump_frame(self):
+        self.image=self.firstImage
     def walk(self):
-        pass #animation for walking
+        if self.image==self.frame1 and self.y==85.0:
+            self.image=self.frame2
+        else:
+            if self.y!=85.0:
+                self.image=self.firstImage
+            else: self.image=self.frame1
     def crouch(self):
-        pass #animation for crouching
+        if self.image==self.crouch1 and self.y==85.0:
+            self.image=self.crouch2
+        else:
+            if self.y!=85.0:
+                self.image=self.firstImage
+            else: self.image=self.crouch1
     def die(self):
         pass #animation for dying
+        return True
+    def jump_down(self):
+        if self.y<85 and self.direction=='down':
+            self.y+=4.5
+            self.direction='down'
+        else: 
+            self.direction=None
+    def jump_up(self):
+        if self.y>(149-self.jumpHeight) and self.direction=='up':
+            self.y-=4.5
+            self.direction='up'
+        else: 
+            self.direction='down'
+            self.jump_down()
+
     def jump(self):
-        for x in self.jumpHeight:
-            self.y+=0.3
-        for x in self.jumpHeight:
-            self.y-=0.3
+        self.jump_up()
+        
+
     def invincibility_frames(self):
         pass #invincibility frames animation
 
 class Clouds(OnScreen):
-    def __init__(self, name='cloud', x=10, y=0, image='resources/light_clouds.png', firstImage='resources/light_clouds.png', secondaryImage='resources/dark_moon.png', screenSpeed=0, speedModifier=0.5, rect=None,scale=1):
+    def __init__(self, name='cloud', x=600, y=0, image='resources/light_clouds.png', firstImage='resources/light_clouds.png', secondaryImage='resources/dark_moon.png', screenSpeed=0, speedModifier=0.2, rect=None,scale=1):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
 
 class Ground(OnScreen):
@@ -130,17 +165,18 @@ class Cactus(OnScreen):
 
 #'''
 class Theme:
-    def __init__(self,cactus_options = [],power_up_options = [],runner = Runner(),clouds = Clouds(),ground = Ground(),background = Background(),power_up = PowerUp(),cactus=Cactus()):
+    def __init__(self,cactus_options = [],power_up_options = [],runner = Runner(),clouds = Clouds(),ground = Ground(),ground2=Ground(x=598),background = Background(),power_up = PowerUp(),cactus=Cactus()):
 
         self.cactus_options=cactus_options
         self.power_up_options=power_up_options
         self.runner=runner
         self.clouds=clouds
         self.ground=ground
+        self.ground2=ground2
         self.background=background
         self.power_up=power_up
         self.cactus=cactus
-        self.objects= [self.background,self.ground,self.clouds,self.runner,self.power_up,self.cactus]
+        self.objects= [self.background,self.ground,self.ground2,self.clouds,self.runner,self.power_up,self.cactus]
 
     def change_speed(self,speed):
         for object in self.objects:
@@ -153,17 +189,17 @@ class Theme:
     def collision_check(self):
         if not self.runner.invincible:
             if self.runner.collisionCheck(self.cactus):
-                pass # make player death function
+                self.runner.die()
+                return 1
         elif self.runner.collisionCheck(self.power_up):
             self.power_up.effect(self) # update later. figure out how powerups are gonna work
             self.power_up.state=False
+            return 2
         else: return 0
 
     def show_all(self):
         for object in self.objects:
-            if type(object)==list:
-                pass
-            elif object == self.power_up:
+            if object == self.power_up:
                 if object.state == True:
                     
                     object.show()
@@ -172,15 +208,24 @@ class Theme:
                 object.show()
 
 #       ''' 
-
+on_screen = Theme()
+on_screen.runner.direction=None
 running = True
 speed=0
+time=0
+score=0000
+
+score_font = pygame.font.Font('freesansbold.ttf', 14)
+font_color = (0, 0, 0)
+font_location = (480, 10)
+dead=False
+highScore=0
+
+
 while running:
-    clock.tick(30) # 30fps
+    clock.tick(60)
+    time+=1
 
-   
-
-    on_screen = Theme()
 
     for event in pygame.event.get():
         keys = pygame.key.get_pressed()
@@ -188,24 +233,42 @@ while running:
             running = False
 
         if event.type == pygame.KEYDOWN: # Key is pressed
-            if keys[pygame.SPACE] or keys[pygame.K_UP]: # if space or up is pressed
+            if keys[pygame.K_SPACE] or keys[pygame.K_UP]: # if space or up is pressed
 
                 if speed == 0:
-                    speed=30
+                    speed=5
+                on_screen.runner.direction='up'
+
+                walking=on_screen.runner.jump_frame
 
             elif keys[pygame.K_DOWN]: # if down arrow is pressed
-                pass #make the creature crouch
+                walking=on_screen.runner.crouch
+
+        else: walking=on_screen.runner.walk
+        if pygame.mouse.get_pressed()[0]:
+            if speed == 0:
+                speed=5
+            on_screen.runner.direction='up'
+                    
 
     # detect collision here
+    
 
     # show items
-    on_screen.show_all()
+    on_screen.runner.jump()
+    on_screen.change_speed(speed)
+    if (time//5-time/5)==0 and speed!=0: # control frame rate for walking, score, ect
+        walking()
+        score+=1
+    print(on_screen.collision_check())
+    if on_screen.collision_check()==1:
+        if score>=highScore: 
+            highScore=score
+    else: pass
 
+    on_screen.show_all()
+    
+    screen.blit(score_font.render(f"HI: {str(highScore).zfill(5)} {str(score).zfill(5)}", True, font_color), font_location)
     # update screen
     pygame.display.flip()
-    
-                
-
-        
-
     
