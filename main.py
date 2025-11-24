@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 import pygame
 from pygame import mixer
+import random
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -46,7 +47,6 @@ class Button:
 class OnScreen:
     def __init__(self,name='basic class',x=0,y=0,image='resources/light_neutral.png',firstImage='resources/light_neutral.png',secondaryImage='resources/light_neutral.png',screenSpeed=0,speedModifier=0,rect=None,scale=1):
         self.name=name
-        self.ogX=x
         self.x=x
         self.y=y
         self.img=pygame.image.load(image)
@@ -59,19 +59,33 @@ class OnScreen:
         self.secondaryImage=pygame.image.load(secondaryImage)
         self.screenSpeed=screenSpeed
         self.speedModifier=speedModifier
-        self.rect=self.image.get_rect() #temporary
+        self.rect=rect
+        try:
+            self.hitbox=pygame.rect.Rect(self.x+self.rect[0],self.y+self.rect[1],self.rect[2],self.rect[3])
+        except:
+            self.hitbox=self.image.get_rect() #temporary
+     
+            
+    def hitbox_update(self): #adjust hitbox position to account for movement
+        try:
+            self.hitbox=pygame.rect.Rect(self.x+self.rect[0],self.y+self.rect[1],self.rect[2],self.rect[3])
+        except:
+            self.hitbox=self.image.get_rect() #temporary
+            self.hitbox.topleft=(self.x,self.y)
 
     def move(self):
-        if self.x>=(0-self.rect[2]):
+        if self.x>=(0-self.hitbox[2]):
             speed=self.screenSpeed*self.speedModifier
             self.x-=speed
+            self.hitbox_update()
         else: self.x=600
            
     def show(self):
         self.move()
         screen.blit(self.image,(self.x,self.y))
-    
-    
+        
+    def hitbox_draw(self,color=(255,0,0)): 
+        pygame.draw.rect(screen, color, self.hitbox, 2) #debugging rect
 
     def colorChange(self):
         if self.image==self.firstImage:
@@ -80,11 +94,11 @@ class OnScreen:
             self.image=self.firstImage
 
     def collisionCheck(self,other):
-        return pygame.Rect.colliderect(self.rect,other.rect)
+        return pygame.Rect.colliderect(self.hitbox,other.hitbox)
     
 
 class PowerUp(OnScreen):
-    def __init__(self, name="powerup", x=100, y=100, image='resources/light_neutral.png', firstImage='resources/light_neutral.png', secondaryImage='resources/light_neutral.png', screenSpeed=0, speedModifier=1, rect=None, state=False, sound=None,scale=1):
+    def __init__(self, name="powerup", x=100, y=20, image='resources/light_neutral.png', firstImage='resources/light_neutral.png', secondaryImage='resources/light_neutral.png', screenSpeed=0, speedModifier=1, rect=None, state=False, sound=None,scale=1):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.state=state
         self.sound=sound
@@ -94,9 +108,7 @@ class PowerUp(OnScreen):
         pass
 
 class Runner(OnScreen):
-    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',
-                 
-                 screenSpeed=0, speedModifier=0, rect=None,jumpHeight=155,state=True,invincible=False,scale=1,direction='up',):
+    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[12,11,41,42],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.jumpHeight=jumpHeight
         self.state=state
@@ -123,17 +135,19 @@ class Runner(OnScreen):
                 self.image=self.firstImage
             else: self.image=self.crouch1
     def die(self):
-        pass #animation for dying
+        pass # death animation
         return True
     def jump_down(self):
         if self.y<85 and self.direction=='down':
             self.y+=4.5
+            self.hitbox_update()
             self.direction='down'
         else: 
             self.direction=None
     def jump_up(self):
         if self.y>(149-self.jumpHeight) and self.direction=='up':
             self.y-=4.5
+            self.hitbox_update()
             self.direction='up'
         else: 
             self.direction='down'
@@ -160,7 +174,8 @@ class Background(OnScreen):
         
 
 class Cactus(OnScreen):
-    def __init__(self, name='cactus', x=500, y=0, image='resources/light_cactus_big_single.png', firstImage='resources/light_cactus_big_single.png', secondaryImage='resources/dark_cactus_big_single.png', screenSpeed=0, speedModifier=1, rect=None,scale=1):
+    def __init__(self, name='cactus', x=500, y=0, image='resources/light_cactus_big_single.png', firstImage='resources/light_cactus_big_single.png', secondaryImage='resources/dark_cactus_big_single.png', screenSpeed=0, speedModifier=1,
+                  rect=[26,90,25,50],scale=1):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
 
 #'''
@@ -206,6 +221,19 @@ class Theme:
                 else: pass
             else:
                 object.show()
+    def hitboxes(self):
+        colors=[(255,0,0), # red, bg
+                (0,255,0), # green, ground
+                (0,255,0), # green, ground2
+                (255,255,0), # yellow, clouds
+                (255,0,255), # magenta, runner
+                (0,255,255), # cyan, powerup
+                (255,128,0) # orange, cactus
+                ]
+        #print(len(self.objects))
+        for object in self.objects:
+            color = colors[self.objects.index(object)]
+            object.hitbox_draw(color)
 
 #       ''' 
 on_screen = Theme()
@@ -250,23 +278,27 @@ while running:
                 speed=5
             on_screen.runner.direction='up'
                     
+    # collision detection
 
-    # detect collision here
+    if on_screen.collision_check()==1:
+        if score>=highScore: 
+            highScore=score
+        speed=0
+    else: pass
     
 
     # show items
-    on_screen.runner.jump()
+    if speed>0:
+        on_screen.runner.jump()
     on_screen.change_speed(speed)
     if (time//5-time/5)==0 and speed!=0: # control frame rate for walking, score, ect
         walking()
         score+=1
-    print(on_screen.collision_check())
-    if on_screen.collision_check()==1:
-        if score>=highScore: 
-            highScore=score
-    else: pass
+    elif speed==0:
+        on_screen.runner.image=on_screen.runner.firstImage
 
     on_screen.show_all()
+    on_screen.hitboxes() #debugging hitboxes
     
     screen.blit(score_font.render(f"HI: {str(highScore).zfill(5)} {str(score).zfill(5)}", True, font_color), font_location)
     # update screen
