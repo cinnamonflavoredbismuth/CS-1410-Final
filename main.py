@@ -61,20 +61,40 @@ class OnScreen:
         self.speedModifier=speedModifier
         self.rect=rect
         try:
-            self.hitbox=pygame.rect.Rect(self.x+self.rect[0],self.y+self.rect[1],self.rect[2],self.rect[3])
+            if type(self.rect[0])==list:
+                self.hitbox=[]
+                for i in range(len(self.rect)):
+                    self.hitbox.append(pygame.rect.Rect(self.x+self.rect[i][0],self.y+self.rect[i][1],self.rect[i][2],self.rect[i][3]))
+            else:
+                self.hitbox=pygame.rect.Rect(self.x+self.rect[0],self.y+self.rect[1],self.rect[2],self.rect[3])
         except:
             self.hitbox=self.image.get_rect() #temporary
      
             
     def hitbox_update(self): #adjust hitbox position to account for movement
         try:
-            self.hitbox=pygame.rect.Rect(self.x+self.rect[0],self.y+self.rect[1],self.rect[2],self.rect[3])
+            if type(self.hitbox)==list:
+                for i in range(len(self.hitbox)):
+                    self.hitbox[i]=pygame.rect.Rect(self.x+self.rect[i][0],self.y+self.rect[i][1],self.rect[i][2],self.rect[i][3])
+            else:
+                self.hitbox=pygame.rect.Rect(self.x+self.rect[0],self.y+self.rect[1],self.rect[2],self.rect[3])
         except:
             self.hitbox=self.image.get_rect() #temporary
             self.hitbox.topleft=(self.x,self.y)
 
     def move(self):
-        if self.x>=(0-self.hitbox[2]):
+        nums=[]
+        num = 0
+        if type(self.hitbox) == list: 
+            for box in self.hitbox:
+                nums.append(box[2])
+            for n in nums:
+                if n>num:
+                    num=n
+
+        else: num=self.hitbox[2]
+        
+        if self.x>=(0-num):
             speed=self.screenSpeed*self.speedModifier
             self.x-=speed
             self.hitbox_update()
@@ -85,7 +105,11 @@ class OnScreen:
         screen.blit(self.image,(self.x,self.y))
         
     def hitbox_draw(self,color=(255,0,0)): 
-        pygame.draw.rect(screen, color, self.hitbox, 2) #debugging rect
+        if type(self.hitbox)==list:
+            for box in self.hitbox:
+                pygame.draw.rect(screen, color, box, 2) #debugging rect
+        else:
+            pygame.draw.rect(screen, color, self.hitbox, 2) #debugging rect
 
     def colorChange(self):
         if self.image==self.firstImage:
@@ -94,7 +118,24 @@ class OnScreen:
             self.image=self.firstImage
 
     def collisionCheck(self,other):
-        return pygame.Rect.colliderect(self.hitbox,other.hitbox)
+        if type(self.hitbox)==list and type(other.hitbox)==list:
+            for box1 in self.hitbox:
+                for box2 in other.hitbox:
+                    if pygame.Rect.colliderect(box1,box2):
+                        return True
+                        
+        elif type(self.hitbox)==list:
+            for box in self.hitbox:
+                if pygame.Rect.colliderect(box,other.hitbox):
+                    return True
+                    
+        elif type(other.hitbox)==list:
+            for box in other.hitbox:
+                if pygame.Rect.colliderect(self.hitbox,box):
+                    return True
+                    
+        else:
+            return pygame.Rect.colliderect(self.hitbox,other.hitbox)
     
 
 class PowerUp(OnScreen):
@@ -108,7 +149,7 @@ class PowerUp(OnScreen):
         pass
 
 class Runner(OnScreen):
-    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[12,11,41,42],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',):
+    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[[12,11,20,42],[12,11,41,20]],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.jumpHeight=jumpHeight
         self.state=state
@@ -174,7 +215,7 @@ class Background(OnScreen):
         
 
 class Cactus(OnScreen):
-    def __init__(self, name='cactus', x=500, y=0, image='resources/light_cactus_big_single.png', firstImage='resources/light_cactus_big_single.png', secondaryImage='resources/dark_cactus_big_single.png', screenSpeed=0, speedModifier=1,
+    def __init__(self, name='cactus', x=800, y=0, image='resources/light_cactus_big_single.png', firstImage='resources/light_cactus_big_single.png', secondaryImage='resources/dark_cactus_big_single.png', screenSpeed=0, speedModifier=1,
                   rect=[26,90,25,50],scale=1):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
 
@@ -246,25 +287,38 @@ score=0000
 score_font = pygame.font.Font('freesansbold.ttf', 14)
 font_color = (0, 0, 0)
 font_location = (480, 10)
-dead=False
+dead=True
 highScore=0
+
+def start(on_screen):
+    speed=5
+    dead = False
+    on_screen.runner.y=85
+    on_screen.runner.hitbox_update()
+    on_screen.cactus.x=800
+    return speed, dead
+
+def temp(on_screen):
+    return None, False
 
 
 while running:
     clock.tick(60)
     time+=1
+    resrart=temp
 
 
     for event in pygame.event.get():
         keys = pygame.key.get_pressed()
+
         if event.type == pygame.QUIT: # Close the window
             running = False
 
         if event.type == pygame.KEYDOWN: # Key is pressed
             if keys[pygame.K_SPACE] or keys[pygame.K_UP]: # if space or up is pressed
-
-                if speed == 0:
-                    speed=5
+                
+                if speed == 0: #reset after death
+                    resrart=start
                 on_screen.runner.direction='up'
 
                 walking=on_screen.runner.jump_frame
@@ -274,29 +328,38 @@ while running:
 
         else: walking=on_screen.runner.walk
         if pygame.mouse.get_pressed()[0]:
-            if speed == 0:
-                speed=5
+            if speed == 0: #reset after death
+                resrart=start
             on_screen.runner.direction='up'
                     
     # collision detection
 
-    if on_screen.collision_check()==1:
-        if score>=highScore: 
-            highScore=score
+    if on_screen.collision_check()==1: # Death
+        dead=True
+        
+    if dead:
         speed=0
-    else: pass
-    
-
-    # show items
-    if speed>0:
-        on_screen.runner.jump()
-    on_screen.change_speed(speed)
-    if (time//5-time/5)==0 and speed!=0: # control frame rate for walking, score, ect
-        walking()
-        score+=1
-    elif speed==0:
+        walking=on_screen.runner.die 
         on_screen.runner.image=on_screen.runner.firstImage
+        if score > highScore:
+            highScore=score
+        else:
+            highScore=highScore
+        score=0
+    else:
+    # show items
+    
+        on_screen.runner.jump()
+        if (time//5-time/5)==0:
+            walking()
+            score+=1
+        
 
+    vars=resrart(on_screen)
+    speed=vars[0] if vars[0]!=None else speed
+    dead = vars[1]
+
+    on_screen.change_speed(speed)
     on_screen.show_all()
     on_screen.hitboxes() #debugging hitboxes
     
