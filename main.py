@@ -141,6 +141,7 @@ class OnScreen:
      
             
     def hitbox_update(self): #adjust hitbox position to account for movement
+        # hitbox key: [x offset, y offset, width, height]
         try:
             if type(self.hitbox)==list:
                 for i in range(len(self.hitbox)):
@@ -217,6 +218,9 @@ class OnScreen:
         else:
             return pygame.Rect.colliderect(self.hitbox,other.hitbox)
     
+
+# POWERUPS
+
 
 class PowerUp(OnScreen):
     def __init__(self, name="powerup", x=100, y=20, image='resources/light_neutral.png', firstImage='resources/light_neutral.png', secondaryImage='resources/light_neutral.png', screenSpeed=0, speedModifier=1, rect=None, state=False, sound=None,scale=1):
@@ -305,10 +309,68 @@ class Background(OnScreen):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         
 
+# CACTI 
+
+
 class Cactus(OnScreen):
     def __init__(self, name='cactus', x=800, y=0, image='resources/light_cactus_big_single.png', firstImage='resources/light_cactus_big_single.png', secondaryImage='resources/dark_cactus_big_single.png', screenSpeed=0, speedModifier=1,
                   rect=[26,90,25,50],scale=1):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
+
+class CactusSmallSingle(Cactus):
+    def __init__(self, name='cactus_small_single', x=800, y=0, image='resources/light_cactus_small_single.png', firstImage='resources/light_cactus_small_single.png', secondaryImage='resources/dark_cactus_big_single.png', screenSpeed=0, speedModifier=1,
+                  rect=[31,105,18,40],scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
+
+class CactusSmallDuo(Cactus):
+    def __init__(self, name='cactus_small_duo', x=800, y=0, image='resources/light_cactus_small_duo.png', firstImage='resources/light_cactus_small_duo.png', secondaryImage='resources/dark_cactus_small_duo.png', screenSpeed=0, speedModifier=1,
+                  rect=[21,105,35,37],scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
+
+class CactusSmallTriad(Cactus):
+    def __init__(self, name='cactus_small_triad', x=800, y=0, image='resources/light_cactus_small_triad.png', firstImage='resources/light_cactus_small_triad.png', secondaryImage='resources/dark_cactus_small_triad.png', screenSpeed=0, speedModifier=1,
+                  rect=[11,105,50,35],scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
+
+class CactusBigSingle(Cactus):
+    def __init__(self, name='cactus_big_single', x=800, y=0, image='resources/light_cactus_big_single.png', firstImage='resources/light_cactus_big_single.png', secondaryImage='resources/dark_cactus_big_single.png', screenSpeed=0, speedModifier=1,
+                  rect=[26,90,25,50],scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
+
+class CactusQuartet(Cactus):
+    def __init__(self, name='cactus_quartet', x=800, y=0, image='resources/light_cactus_quartet.png', firstImage='resources/light_cactus_quartet.png', secondaryImage='resources/dark_cactus_quartet.png', screenSpeed=0, speedModifier=1,
+                  rect=[3,90,75,50],scale=1):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
+
+
+# BIRDS
+
+
+
+class Bird(OnScreen):
+    def __init__(self, name='bird', x=0, y=0, image='resources/light_bird_middle_down.png', firstImage='resources/light_bird_middle_down.png', secondaryImage='resources/dark_bird_middle_down.png', screenSpeed=0, speedModifier=0, rect=None, scale=1,frame1='resources/light_bird_middle_down.png',frame2='resources/light_bird_middle_up.png'):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale)
+        self.frame1=pygame.image.load(frame1)
+        self.frame2=pygame.image.load(frame2)
+
+    def fly(self):
+        if self.image==self.frame1 and self.y==85.0:
+            self.image=self.frame2
+        else:
+            self.image=self.frame1
+
+class BirdHigh(Bird):
+    def __init__(self, name='bird', x=0, y=0, image='resources/light_bird_high_down.png', firstImage='resources/light_bird_high_down.png', secondaryImage='resources/light_bird_high_down.png', screenSpeed=0, speedModifier=0, rect=[10,55,42,33], scale=1, frame1='resources/light_bird_high_down.png', frame2='resources/dark_bird_high_up.png'):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)
+
+class BirdMiddle(Bird):
+    def __init__(self, name='bird', x=0, y=0, image='resources/light_bird_middle_down.png', firstImage='resources/light_bird_middle_down.png', secondaryImage='resources/dark_bird_middle_down.png', screenSpeed=0, speedModifier=0, rect=[10,80,42,33], scale=1, frame1='resources/light_bird_middle_down.png', frame2='resources/light_bird_middle_up.png'):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)\
+        
+class BirdLow(Bird):
+    def __init__(self, name='bird', x=0, y=0, image='resources/dark_bird_low_down.png', firstImage='resources/dark_bird_low_down.png', secondaryImage='resources/dark_bird_low_down.png', screenSpeed=0, speedModifier=0, rect=[10,105,42,33], scale=1, frame1='resources/dark_bird_low_down.png', frame2='resources/dark_bird_low_up.png'):
+        super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)
+
 
 #'''
 class Theme:
@@ -519,6 +581,12 @@ while running:
     on_screen.change_speed(speed)
     on_screen.show_all()
     on_screen.hitboxes() #debugging hitboxes
+
+    # cactus Hitboxes
+    '''    objects=[Background(),Ground(),CactusBigSingle(x=100),CactusQuartet(x=170),CactusSmallDuo(x=250),CactusSmallSingle(x=500),CactusSmallTriad(x=50),BirdHigh(x=320),BirdMiddle(x=380),BirdLow(x=450)]
+    for object in objects:
+                object.show()
+                object.hitbox_draw((255,0,0))'''
     
     screen.blit(score_font.render(f"HI: {str(highScore).zfill(5)} {str(score).zfill(5)}", True, font_color), font_location)
     # update screen
