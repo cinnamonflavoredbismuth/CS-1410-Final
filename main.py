@@ -1,5 +1,4 @@
 # CS T Rex Runner
-
 from abc import ABC, abstractmethod
 import pygame
 from pygame import mixer
@@ -152,7 +151,7 @@ class OnScreen:
             self.hitbox=self.image.get_rect() #temporary
             self.hitbox.topleft=(self.x,self.y)
 
-    def move(self,new_x=600):
+    def gone(self):
         nums=[]
         num = 0
         if type(self.hitbox) == list: 
@@ -172,13 +171,15 @@ class OnScreen:
                     left=n
         else: left=self.hitbox[0]
 
-        
-        if left>=(0-num):
+        print(left,(0-num))
+        if left<(0-num): 
+            return True
+        else: return False
+    
+    def move(self,new_x=600):
+        if not self.gone():
             speed=self.screenSpeed*self.speedModifier
             self.x-=speed
-            self.hitbox_update()
-        else: 
-            self.x=new_x
             self.hitbox_update()
            
     def show(self,new_x=600):
@@ -374,17 +375,28 @@ class BirdLow(Bird):
 
 #'''
 class Theme:
-    def __init__(self,cactus_options = [],power_up_options = [],runner = Runner(),clouds = Clouds(),ground = [Ground(),Ground(x=598)],background = Background(),power_up = PowerUp(),cactus=[Cactus(),Cactus(900)]):
-
-        self.cactus_options=cactus_options
-        self.power_up_options=power_up_options
+    def __init__(self,cactus_options = [CactusSmallSingle,CactusSmallDuo,CactusSmallTriad,CactusBigSingle,CactusQuartet],bird_options = [BirdHigh,BirdMiddle,BirdLow],power_up_options = [PowerUp],runner = Runner(),cloud_options = [Clouds],ground_options = [Ground],background = Background()):
         self.runner=runner
-        self.clouds=clouds
-        self.ground=ground
+
+        self.cloud_options=cloud_options
+        self.clouds=[random.choice(self.cloud_options)(),random.choice(self.cloud_options)(x=400)]
+        
         self.background=background
-        self.power_up=power_up
-        self.cactus=cactus
-        self.objects= [self.background,self.ground,self.clouds,self.runner,self.power_up,self.cactus]
+
+        self.ground_options=ground_options
+        self.ground=[random.choice(self.ground_options)(),random.choice(self.ground_options)(x=598)]
+
+        #powerup handling
+        
+        self.power_up_options=power_up_options
+        self.power_up=[random.choice(self.power_up_options)(),random.choice(self.power_up_options)()]
+        
+        #enemy handling
+        self.enemy_options=cactus_options+bird_options
+        self.enemies=[random.choice(self.enemy_options)(),random.choice(self.enemy_options)(800)]
+
+        self.objects= [self.background,self.ground,self.clouds,self.runner,self.power_up,self.enemies]
+
 
     def change_speed(self,speed):
         #print(speed,speed//1)
@@ -406,12 +418,12 @@ class Theme:
 
     def collision_check(self):
         if not self.runner.invincible:
-            if type(self.cactus)==list:
-                for cactus in self.cactus:
-                    if self.runner.collisionCheck(cactus):
+            if type(self.enemies)==list:
+                for enemy in self.enemies:
+                    if self.runner.collisionCheck(enemy):
                         return 1
             else:
-                if self.runner.collisionCheck(self.cactus):
+                if self.runner.collisionCheck(self.enemies):
                     return 1
         elif self.runner.collisionCheck(self.power_up):
             self.power_up.effect(self) # update later. figure out how powerups are gonna work
@@ -419,9 +431,24 @@ class Theme:
             return 2
         else: return 0
 
+    def spawn(self,objects,new_x=800,object_type=None):
+        print(type(objects))
+        if type(objects)==list:
+                if objects[0].gone():
+                    objects.pop(0)
+                    objects.append(random.choice(self.object_options)(x=new_x))
+                print(objects)
+                print(objects[0].name,objects[0].x)
+        else:
+            if objects.gone():
+                objects.x=new_x
+                objects.hitbox_update()
+            print(objects.name,objects.x)
+        
+
     def show_all(self):
         new_x=[600, # background
-               600, # ground
+               598, # ground
                600, # clouds
                0, # runner
                600, # powerup
@@ -430,12 +457,13 @@ class Theme:
         for object in self.objects:
             place=new_x[self.objects.index(object)]
 
+            self.spawn(object,place)
+
             if type(object)==list:
                 for item in object:
                     if item == self.power_up:
                         if item.state == True:
                             item.show(place)
-                        else: pass
                     else:
                         item.show(place)
 
@@ -446,6 +474,8 @@ class Theme:
                     else: pass
                 else:
                     object.show(place)
+
+
     def hitboxes(self):
         colors=[(255,0,0), # red, bg
                 (0,255,0), # green, ground
@@ -493,7 +523,7 @@ def start(on_screen):
     dead = False
     on_screen.runner.y=85
     on_screen.runner.hitbox_update()
-    for cactus in on_screen.cactus:
+    for cactus in on_screen.enemies:
         if cactus.x<800 and cactus.x>-60:
             cactus.x=800
 

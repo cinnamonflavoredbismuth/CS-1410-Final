@@ -1,2 +1,3 @@
 
-        pass #invincibility frames animation
+    for object in objects:
+                object.show()
