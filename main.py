@@ -4,11 +4,80 @@ from abc import ABC, abstractmethod
 import pygame
 from pygame import mixer
 import random
-
+import socket
 pygame.init()
 clock = pygame.time.Clock()
 
 size=(598,149)
+
+
+
+class User:
+    def __init__(self, index, username, score=0):
+        self.index = index
+        self.username = username
+        self.score = score
+    def export_data(self):
+        return [self.index, self.username, self.score]
+
+class CsvLoader:
+    def __init__(self, filepath):
+        self.filepath = filepath
+
+    def load_data(self):
+        users = []
+        try:
+            with open(self.filepath, 'r') as file:
+                lines = file.readlines()
+                for line in lines:
+                    index, username, score = line.strip().split(',')
+                    users.append(User(int(index), username, int(score)))
+        except FileNotFoundError:
+            pass
+        return users
+    
+    def save_data(self, users):
+        with open(self.filepath, 'w') as file:
+            for user in users:
+                file.write(','.join(map(str, user.export_data())) + '\n')
+    
+    def exists(self, username):
+        users = self.load_data()
+        for user in users:
+            if user.username == username:
+                return True
+        return False
+
+    def add_user(self, username):
+        if not self.exists(username):
+            with open(self.filepath, 'a') as file:
+                index = sum(1 for line in open(self.filepath)) + 1
+                file.write(f"{index},{username},0\n")
+    
+    def update_score(self, username, new_score):
+        if self.exists(username):
+            users = self.load_data()
+            for user in users:
+                if user.username == username:
+                    user.score = new_score
+            self.save_data(users)
+        else:
+            self.add_user(username)
+
+    def remove_user(self, username):
+        users = self.load_data()
+        users = [user for user in users if user.username != username]
+        self.save_data(users)
+
+    def get_user(self, username):
+        users = self.load_data()
+        
+        for user in users:
+            if user.username == username:
+                return user
+        return User(len(users)+1, username, 0)
+
+
 
 
 # Score text
@@ -82,7 +151,7 @@ class OnScreen:
             self.hitbox=self.image.get_rect() #temporary
             self.hitbox.topleft=(self.x,self.y)
 
-    def move(self):
+    def move(self,new_x=600):
         nums=[]
         num = 0
         if type(self.hitbox) == list: 
@@ -91,17 +160,28 @@ class OnScreen:
             for n in nums:
                 if n>num:
                     num=n
-
         else: num=self.hitbox[2]
+
+
+        if type(self.hitbox) == list: 
+            for box in self.hitbox:
+                nums.append(box[0])
+            for n in nums:
+                if n<num:
+                    left=n
+        else: left=self.hitbox[0]
+
         
-        if self.x>=(0-num):
+        if left>=(0-num):
             speed=self.screenSpeed*self.speedModifier
             self.x-=speed
             self.hitbox_update()
-        else: self.x=600
+        else: 
+            self.x=new_x
+            self.hitbox_update()
            
-    def show(self):
-        self.move()
+    def show(self,new_x=600):
+        self.move(new_x)
         screen.blit(self.image,(self.x,self.y))
         
     def hitbox_draw(self,color=(255,0,0)): 
@@ -149,7 +229,7 @@ class PowerUp(OnScreen):
         pass
 
 class Runner(OnScreen):
-    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[[12,11,20,42],[12,11,41,20]],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',):
+    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[[12,11,20,42],[12,11,41,20]],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',jump_sound=None,death_sound=None):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.jumpHeight=jumpHeight
         self.state=state
@@ -159,6 +239,8 @@ class Runner(OnScreen):
         self.frame2=pygame.image.load(frame2)
         self.crouch1=pygame.image.load(crouch1)
         self.crouch2=pygame.image.load(crouch2)
+        self.jump_sound=jump_sound
+        self.death_sound=death_sound
     def jump_frame(self):
         self.image=self.firstImage
     def walk(self):
@@ -176,7 +258,10 @@ class Runner(OnScreen):
                 self.image=self.firstImage
             else: self.image=self.crouch1
     def die(self):
-        pass # death animation
+        if self.death_sound!=None:
+            pygame.mixer.sound.play(pygame.mixer.Sound(self.death_sound))
+        else:
+            print("death")
         return True
     def jump_down(self):
         if self.y<85 and self.direction=='down':
@@ -201,6 +286,12 @@ class Runner(OnScreen):
     def invincibility_frames(self):
         pass #invincibility frames animation
 
+    def jumping_sound(self):
+        if self.jump_sound!=None:
+            pygame.mixer.sound.play(pygame.mixer.Sound(self.jump_sound))
+        else:
+            print("jump")
+
 class Clouds(OnScreen):
     def __init__(self, name='cloud', x=600, y=0, image='resources/light_clouds.png', firstImage='resources/light_clouds.png', secondaryImage='resources/dark_moon.png', screenSpeed=0, speedModifier=0.2, rect=None,scale=1):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
@@ -221,32 +312,45 @@ class Cactus(OnScreen):
 
 #'''
 class Theme:
-    def __init__(self,cactus_options = [],power_up_options = [],runner = Runner(),clouds = Clouds(),ground = Ground(),ground2=Ground(x=598),background = Background(),power_up = PowerUp(),cactus=Cactus()):
+    def __init__(self,cactus_options = [],power_up_options = [],runner = Runner(),clouds = Clouds(),ground = [Ground(),Ground(x=598)],background = Background(),power_up = PowerUp(),cactus=[Cactus(),Cactus(900)]):
 
         self.cactus_options=cactus_options
         self.power_up_options=power_up_options
         self.runner=runner
         self.clouds=clouds
         self.ground=ground
-        self.ground2=ground2
         self.background=background
         self.power_up=power_up
         self.cactus=cactus
-        self.objects= [self.background,self.ground,self.ground2,self.clouds,self.runner,self.power_up,self.cactus]
+        self.objects= [self.background,self.ground,self.clouds,self.runner,self.power_up,self.cactus]
 
     def change_speed(self,speed):
-        for object in self.objects:
-            object.screenSpeed = speed
+        #print(speed,speed//1)
+        if speed//1 == speed: # integer check
+            for object in self.objects:
+                if type(object)==list: 
+                    for item in object:
+                        item.screenSpeed = speed
+                else: object.screenSpeed = speed
+            
 
     def theme_change(self):
         for object in self.objects:
-            object.colorChange()
+            if type(object)==list:
+                for item in object:
+                    item.colorChange()
+            else:
+                object.colorChange()
 
     def collision_check(self):
         if not self.runner.invincible:
-            if self.runner.collisionCheck(self.cactus):
-                self.runner.die()
-                return 1
+            if type(self.cactus)==list:
+                for cactus in self.cactus:
+                    if self.runner.collisionCheck(cactus):
+                        return 1
+            else:
+                if self.runner.collisionCheck(self.cactus):
+                    return 1
         elif self.runner.collisionCheck(self.power_up):
             self.power_up.effect(self) # update later. figure out how powerups are gonna work
             self.power_up.state=False
@@ -254,18 +358,35 @@ class Theme:
         else: return 0
 
     def show_all(self):
+        new_x=[600, # background
+               600, # ground
+               600, # clouds
+               0, # runner
+               600, # powerup
+               800+random.randint(-200,200) # cactus
+               ]
         for object in self.objects:
-            if object == self.power_up:
-                if object.state == True:
-                    
-                    object.show()
-                else: pass
+            place=new_x[self.objects.index(object)]
+
+            if type(object)==list:
+                for item in object:
+                    if item == self.power_up:
+                        if item.state == True:
+                            item.show(place)
+                        else: pass
+                    else:
+                        item.show(place)
+
             else:
-                object.show()
+                if object == self.power_up:
+                    if object.state == True:
+                        object.show(place)
+                    else: pass
+                else:
+                    object.show(place)
     def hitboxes(self):
         colors=[(255,0,0), # red, bg
                 (0,255,0), # green, ground
-                (0,255,0), # green, ground2
                 (255,255,0), # yellow, clouds
                 (255,0,255), # magenta, runner
                 (0,255,255), # cyan, powerup
@@ -274,7 +395,11 @@ class Theme:
         #print(len(self.objects))
         for object in self.objects:
             color = colors[self.objects.index(object)]
-            object.hitbox_draw(color)
+            if type(object)==list:
+                for item in object:
+                    item.hitbox_draw(color)
+            else:
+                object.hitbox_draw(color)
 
 #       ''' 
 on_screen = Theme()
@@ -288,18 +413,35 @@ score_font = pygame.font.Font('freesansbold.ttf', 14)
 font_color = (0, 0, 0)
 font_location = (480, 10)
 dead=True
-highScore=0
+
+
+
+csv=CsvLoader('scoreboard.csv')
+hostname = socket.gethostname()
+IPAddr = socket.gethostbyname(hostname)
+
+player=csv.get_user(IPAddr)
+
+highScore=player.score
+
+
 
 def start(on_screen):
     speed=5
     dead = False
     on_screen.runner.y=85
     on_screen.runner.hitbox_update()
-    on_screen.cactus.x=800
+    for cactus in on_screen.cactus:
+        if cactus.x<800 and cactus.x>-60:
+            cactus.x=800
+
+
     return speed, dead
 
 def temp(on_screen):
     return None, False
+def dead_restart(on_screen):
+    return 0, True
 
 
 while running:
@@ -315,11 +457,15 @@ while running:
             running = False
 
         if event.type == pygame.KEYDOWN: # Key is pressed
-            if keys[pygame.K_SPACE] or keys[pygame.K_UP]: # if space or up is pressed
+            if keys[pygame.K_SPACE] or keys[pygame.K_UP] : # if space or up is pressed
                 
                 if speed == 0: #reset after death
                     resrart=start
-                on_screen.runner.direction='up'
+                    on_screen.runner.direction='up'
+                    on_screen.runner.jumping_sound()
+                elif on_screen.runner.y==85:
+                    on_screen.runner.direction='up'
+                    on_screen.runner.jumping_sound()
 
                 walking=on_screen.runner.jump_frame
 
@@ -327,34 +473,45 @@ while running:
                 walking=on_screen.runner.crouch
 
         else: walking=on_screen.runner.walk
-        if pygame.mouse.get_pressed()[0]:
+        if pygame.mouse.get_pressed()[0] : # if mouse clicked
             if speed == 0: #reset after death
-                resrart=start
-            on_screen.runner.direction='up'
+                    resrart=start
+                    on_screen.runner.direction='up'
+                    on_screen.runner.jumping_sound()
+            elif on_screen.runner.y==85:
+                    on_screen.runner.direction='up'
+                    on_screen.runner.jumping_sound()
                     
     # collision detection
 
     if on_screen.collision_check()==1: # Death
+        if dead == False:
+            on_screen.runner.die()
         dead=True
+        resrart=dead_restart if resrart != start else resrart
         
-    if dead:
-        speed=0
-        walking=on_screen.runner.die 
-        on_screen.runner.image=on_screen.runner.firstImage
-        if score > highScore:
-            highScore=score
-        else:
-            highScore=highScore
-        score=0
-    else:
-    # show items
-    
+        walking=on_screen.runner.jump_frame
+
+    # seperate frame rate dependent movement
+        
+    if speed != 0:
         on_screen.runner.jump()
         if (time//5-time/5)==0:
             walking()
             score+=1
+            speed+=0.1
         
-
+       
+    else:
+        on_screen.runner.image=on_screen.runner.firstImage
+        if score > highScore:
+            highScore=score
+            csv.update_score(IPAddr,highScore)
+        else:
+            highScore=highScore
+        score=0
+        
+    # show items
     vars=resrart(on_screen)
     speed=vars[0] if vars[0]!=None else speed
     dead = vars[1]
