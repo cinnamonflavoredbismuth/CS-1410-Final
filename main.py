@@ -171,7 +171,6 @@ class OnScreen:
                     left=n
         else: left=self.hitbox[0]
 
-        print(left,(0-num))
         if left<(0-num): 
             return True
         else: return False
@@ -431,49 +430,50 @@ class Theme:
             return 2
         else: return 0
 
-    def spawn(self,objects,new_x=800,object_type=None):
-        print(type(objects))
+    def spawn(self,objects,new_x=800,object_options=None):      
         if type(objects)==list:
-                if objects[0].gone():
-                    objects.pop(0)
-                    objects.append(random.choice(self.object_options)(x=new_x))
-                print(objects)
-                print(objects[0].name,objects[0].x)
+            if objects[0].gone():
+                objects.pop(0)
+                objects.append(random.choice(object_options)(x=new_x))
+            for object in objects:
+                object.show()
+
         else:
             if objects.gone():
-                objects.x=new_x
-                objects.hitbox_update()
-            print(objects.name,objects.x)
+                objects=random.choice(object_options)(x=new_x)
+            objects.show()
+                
         
 
     def show_all(self):
-        new_x=[600, # background
-               598, # ground
-               600, # clouds
-               0, # runner
-               600, # powerup
-               800+random.randint(-200,200) # cactus
-               ]
+        params={'background':[600,self.background], # background
+               'ground':[598,self.ground_options], # 
+               'clouds':[600,self.cloud_options], # 
+               'runner':[0,self.runner], # 
+               'powerup': [600,self.power_up_options], # 
+               'enemy':[800+random.randint(-200,200),self.enemy_options] # 
+               }
         for object in self.objects:
-            place=new_x[self.objects.index(object)]
+            name=list(params.keys())[self.objects.index(object)]
+            #
 
-            self.spawn(object,place)
-
+            self.spawn(object,params[name][0],params[name][1])
+        '''
             if type(object)==list:
                 for item in object:
                     if item == self.power_up:
                         if item.state == True:
-                            item.show(place)
+                            item.show(params[name][0])
                     else:
-                        item.show(place)
+                        item.show(params[name][0])
 
             else:
                 if object == self.power_up:
                     if object.state == True:
-                        object.show(place)
+                        object.show(params[name][0])
                     else: pass
                 else:
-                    object.show(place)
+                    object.show(params[name][0])'''
 
 
     def hitboxes(self):
