@@ -137,6 +137,9 @@ class OnScreen:
                 self.hitbox=pygame.rect.Rect(self.x+self.rect[0],self.y+self.rect[1],self.rect[2],self.rect[3])
         except:
             self.hitbox=self.image.get_rect() #temporary
+
+    def __str__(self):
+        return f"{self.name} at ({self.x},{self.y})"
      
             
     def hitbox_update(self): #adjust hitbox position to account for movement
@@ -162,12 +165,13 @@ class OnScreen:
                     num=n
         else: num=self.hitbox[2]
 
-
+        nums=[]
+        left=0
         if type(self.hitbox) == list: 
             for box in self.hitbox:
                 nums.append(box[0])
             for n in nums:
-                if n<num:
+                if n<left:
                     left=n
         else: left=self.hitbox[0]
 
@@ -175,14 +179,13 @@ class OnScreen:
             return True
         else: return False
     
-    def move(self,new_x=600):
-        if not self.gone():
+    def move(self):
             speed=self.screenSpeed*self.speedModifier
             self.x-=speed
             self.hitbox_update()
            
-    def show(self,new_x=600):
-        self.move(new_x)
+    def show(self):
+        self.move()
         screen.blit(self.image,(self.x,self.y))
         
     def hitbox_draw(self,color=(255,0,0)): 
@@ -360,21 +363,21 @@ class Bird(OnScreen):
             self.image=self.frame1
 
 class BirdHigh(Bird):
-    def __init__(self, name='bird', x=0, y=0, image='resources/light_bird_high_down.png', firstImage='resources/light_bird_high_down.png', secondaryImage='resources/light_bird_high_down.png', screenSpeed=0, speedModifier=0, rect=[10,55,42,33], scale=1, frame1='resources/light_bird_high_down.png', frame2='resources/dark_bird_high_up.png'):
+    def __init__(self, name='bird_high', x=0, y=0, image='resources/light_bird_high_down.png', firstImage='resources/light_bird_high_down.png', secondaryImage='resources/light_bird_high_down.png', screenSpeed=0, speedModifier=0, rect=[10,55,42,33], scale=1, frame1='resources/light_bird_high_down.png', frame2='resources/dark_bird_high_up.png'):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)
 
 class BirdMiddle(Bird):
-    def __init__(self, name='bird', x=0, y=0, image='resources/light_bird_middle_down.png', firstImage='resources/light_bird_middle_down.png', secondaryImage='resources/dark_bird_middle_down.png', screenSpeed=0, speedModifier=0, rect=[10,80,42,33], scale=1, frame1='resources/light_bird_middle_down.png', frame2='resources/light_bird_middle_up.png'):
+    def __init__(self, name='bird_middle', x=0, y=0, image='resources/light_bird_middle_down.png', firstImage='resources/light_bird_middle_down.png', secondaryImage='resources/dark_bird_middle_down.png', screenSpeed=0, speedModifier=0, rect=[10,80,42,33], scale=1, frame1='resources/light_bird_middle_down.png', frame2='resources/light_bird_middle_up.png'):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)\
         
 class BirdLow(Bird):
-    def __init__(self, name='bird', x=0, y=0, image='resources/dark_bird_low_down.png', firstImage='resources/dark_bird_low_down.png', secondaryImage='resources/dark_bird_low_down.png', screenSpeed=0, speedModifier=0, rect=[10,105,42,33], scale=1, frame1='resources/dark_bird_low_down.png', frame2='resources/dark_bird_low_up.png'):
+    def __init__(self, name='bird_low', x=0, y=0, image='resources/dark_bird_low_down.png', firstImage='resources/dark_bird_low_down.png', secondaryImage='resources/dark_bird_low_down.png', screenSpeed=0, speedModifier=0, rect=[10,105,42,33], scale=1, frame1='resources/dark_bird_low_down.png', frame2='resources/dark_bird_low_up.png'):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)
 
 
 #'''
 class Theme:
-    def __init__(self,cactus_options = [CactusSmallSingle,CactusSmallDuo,CactusSmallTriad,CactusBigSingle,CactusQuartet],bird_options = [BirdHigh,BirdMiddle,BirdLow],power_up_options = [PowerUp],runner = Runner(),cloud_options = [Clouds],ground_options = [Ground],background = Background()):
+    def __init__(self,cactus_options = [CactusSmallSingle,CactusSmallDuo,CactusSmallTriad,CactusBigSingle,CactusQuartet],bird_options = [BirdHigh,BirdMiddle,BirdLow],power_up_options = [PowerUp],runner = Runner(),cloud_options = [Clouds],ground_options = [Ground],background = Background(),speed=0):
         self.runner=runner
 
         self.cloud_options=cloud_options
@@ -392,14 +395,17 @@ class Theme:
         
         #enemy handling
         self.enemy_options=cactus_options+bird_options
-        self.enemies=[random.choice(self.enemy_options)(),random.choice(self.enemy_options)(800)]
+        self.enemies=[random.choice(self.enemy_options)(x=800),random.choice(self.enemy_options)(x=1600)]
 
         self.objects= [self.background,self.ground,self.clouds,self.runner,self.power_up,self.enemies]
+
+        self.speed=speed
 
 
     def change_speed(self,speed):
         #print(speed,speed//1)
         if speed//1 == speed: # integer check
+            self.speed=speed
             for object in self.objects:
                 if type(object)==list: 
                     for item in object:
@@ -429,19 +435,6 @@ class Theme:
             self.power_up.state=False
             return 2
         else: return 0
-
-    def spawn(self,objects,new_x=800,object_options=None):      
-        if type(objects)==list:
-            if objects[0].gone():
-                objects.pop(0)
-                objects.append(random.choice(object_options)(x=new_x))
-            for object in objects:
-                object.show()
-
-        else:
-            if objects.gone():
-                objects=random.choice(object_options)(x=new_x)
-            objects.show()
                 
         
 
@@ -451,29 +444,39 @@ class Theme:
                'clouds':[600,self.cloud_options], # 
                'runner':[0,self.runner], # 
                'powerup': [600,self.power_up_options], # 
-               'enemy':[800+random.randint(-200,200),self.enemy_options] # 
+               'enemy':[800,self.enemy_options] # 
                }
-        for object in self.objects:
-            name=list(params.keys())[self.objects.index(object)]
+        
+
+        for objects in self.objects:
+            name=list(params.keys())[self.objects.index(objects)]
+            new_x=params[name][0]
+            object_options=params[name][1]
             #
 
-            self.spawn(object,params[name][0],params[name][1])
-        '''
-            if type(object)==list:
-                for item in object:
-                    if item == self.power_up:
-                        if item.state == True:
-                            item.show(params[name][0])
-                    else:
-                        item.show(params[name][0])
+            if type(objects)==list:
+                for object in objects:
+
+                    if object.gone():
+                        if name == 'enemy':
+                            print(objects[0],objects[1])
+                        
+                        #print(objects[0],objects[1])
+                        objects.remove(object)
+                        new_object=random.choice(object_options)(x=new_x,screenSpeed=self.speed)
+                        objects.append(new_object)
+                        
+                        if name == 'enemy':
+                            print(objects[0],objects[1])
+                        
+                        #print(objects[0],objects[1])
+                        objects[-1].show()
+                    else: object.show()
 
             else:
-                if object == self.power_up:
-                    if object.state == True:
-                        object.show(params[name][0])
-                    else: pass
-                else:
-                    object.show(params[name][0])'''
+                if objects.gone():
+                    objects=random.choice(object_options)(x=new_x)
+                objects.show()
 
 
     def hitboxes(self):
