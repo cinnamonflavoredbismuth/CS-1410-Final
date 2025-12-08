@@ -128,15 +128,8 @@ class OnScreen:
         self.screenSpeed=screenSpeed
         self.speedModifier=speedModifier
         self.rect=rect
-        try:
-            if type(self.rect[0])==list:
-                self.hitbox=[]
-                for i in range(len(self.rect)):
-                    self.hitbox.append(pygame.rect.Rect(self.x+self.rect[i][0],self.y+self.rect[i][1],self.rect[i][2],self.rect[i][3]))
-            else:
-                self.hitbox=pygame.rect.Rect(self.x+self.rect[0],self.y+self.rect[1],self.rect[2],self.rect[3])
-        except:
-            self.hitbox=self.image.get_rect() #temporary
+        self.hitbox_update()
+        
 
     def __str__(self):
         return f"{self.name} at ({self.x},{self.y})"
@@ -201,11 +194,10 @@ class OnScreen:
         elif self.image == self.secondaryImage:
             self.image=self.firstImage
 
-    def collisionCheck(self,other,):
+    def collisionCheck(self,other):
         if type(self.hitbox)==list and type(other.hitbox)==list:
             for box1 in self.hitbox:
                 for box2 in other.hitbox:
-                    
                     if pygame.Rect.colliderect(box1,box2):
                         return True
                         
@@ -221,9 +213,6 @@ class OnScreen:
                     
         else:
             return pygame.Rect.colliderect(self.hitbox,other.hitbox)
-        
-    def type(self):
-        return type(self)
     
 
 # POWERUPS
@@ -252,6 +241,22 @@ class Runner(OnScreen):
         self.crouch2=pygame.image.load(crouch2)
         self.jump_sound=jump_sound
         self.death_sound=death_sound
+        
+    def hitbox_update(self,num=0): #adjust hitbox position to account for movement
+        # hitbox key: [x offset, y offset, width, height]
+        if num == 0:
+                self.hitbox=[pygame.rect.Rect(self.x+self.rect[0][0],self.y+self.rect[0][1],self.rect[0][2],self.rect[0][3]),pygame.rect.Rect(self.x+self.rect[1][0],self.y+self.rect[1][1],self.rect[1][2],self.rect[1][3])]
+        elif num == 1:
+            self.hitbox=[pygame.rect.Rect(self.x+12,self.y+40,41,20)]
+
+    def move(self):
+            speed=self.screenSpeed*self.speedModifier
+            self.x-=speed
+            if self.direction == 'crouch':
+                self.hitbox_update(1)
+            else:
+                self.hitbox_update()
+
     def jump_frame(self):
         self.image=self.firstImage
     def walk(self):
@@ -355,27 +360,27 @@ class CactusQuartet(Cactus):
 
 
 class Bird(OnScreen):
-    def __init__(self, name='bird', x=0, y=0, image='resources/light_bird_middle_down.png', firstImage='resources/light_bird_middle_down.png', secondaryImage='resources/dark_bird_middle_down.png', screenSpeed=0, speedModifier=1.1, rect=None, scale=1,frame1='resources/light_bird_middle_down.png',frame2='resources/light_bird_middle_up.png'):
+    def __init__(self, name='bird', x=0, y=0, image='resources/light_bird_middle_down.png', firstImage='resources/light_bird_middle_down.png', secondaryImage='resources/dark_bird_middle_down.png', screenSpeed=0, speedModifier=0, rect=None, scale=1,frame1='resources/light_bird_middle_down.png',frame2='resources/light_bird_middle_up.png'):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale)
         self.frame1=pygame.image.load(frame1)
         self.frame2=pygame.image.load(frame2)
 
     def fly(self):
-        if self.image==self.frame1:
+        if self.image==self.frame1 and self.y==85.0:
             self.image=self.frame2
         else:
             self.image=self.frame1
 
 class BirdHigh(Bird):
-    def __init__(self, name='bird_high', x=0, y=0, image='resources/light_bird_high_down.png', firstImage='resources/light_bird_high_down.png', secondaryImage='resources/light_bird_high_down.png', screenSpeed=0, speedModifier=1.1, rect=[10,55,42,33], scale=1, frame1='resources/light_bird_high_down.png', frame2='resources/dark_bird_high_up.png'):
+    def __init__(self, name='bird_high', x=0, y=0, image='resources/light_bird_high_down.png', firstImage='resources/light_bird_high_down.png', secondaryImage='resources/light_bird_high_down.png', screenSpeed=0, speedModifier=0, rect=[10,55,42,33], scale=1, frame1='resources/light_bird_high_down.png', frame2='resources/dark_bird_high_up.png'):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)
 
 class BirdMiddle(Bird):
-    def __init__(self, name='bird_middle', x=0, y=0, image='resources/light_bird_middle_down.png', firstImage='resources/light_bird_middle_down.png', secondaryImage='resources/dark_bird_middle_down.png', screenSpeed=0, speedModifier=1.1, rect=[10,80,42,33], scale=1, frame1='resources/light_bird_middle_down.png', frame2='resources/light_bird_middle_up.png'):
+    def __init__(self, name='bird_middle', x=0, y=0, image='resources/light_bird_middle_down.png', firstImage='resources/light_bird_middle_down.png', secondaryImage='resources/dark_bird_middle_down.png', screenSpeed=0, speedModifier=0, rect=[10,80,42,33], scale=1, frame1='resources/light_bird_middle_down.png', frame2='resources/light_bird_middle_up.png'):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)\
         
 class BirdLow(Bird):
-    def __init__(self, name='bird_low', x=0, y=0, image='resources/dark_bird_low_down.png', firstImage='resources/dark_bird_low_down.png', secondaryImage='resources/dark_bird_low_down.png', screenSpeed=0, speedModifier=1.1, rect=[10,105,42,33], scale=1, frame1='resources/dark_bird_low_down.png', frame2='resources/dark_bird_low_up.png'):
+    def __init__(self, name='bird_low', x=0, y=0, image='resources/dark_bird_low_down.png', firstImage='resources/dark_bird_low_down.png', secondaryImage='resources/dark_bird_low_down.png', screenSpeed=0, speedModifier=0, rect=[10,105,42,33], scale=1, frame1='resources/dark_bird_low_down.png', frame2='resources/dark_bird_low_up.png'):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect, scale, frame1, frame2)
 
 
@@ -438,7 +443,7 @@ class Theme:
             self.power_up.effect(self) # update later. figure out how powerups are gonna work
             self.power_up.state=False
             return 2
-        else: return 
+        else: return 0
                 
         
 
@@ -457,25 +462,25 @@ class Theme:
             new_x=params[name][0]
             object_options=params[name][1]
             #
-            if self.enemies[0].collisionCheck(self.enemies[1]):
-                self.enemies[1].x+=500
 
             if type(objects)==list:
                 for object in objects:
-                    if type(object)==PowerUp and not object.state:
-                        objects.remove(object)
-                        new_object=random.choice(object_options)(x=new_x,screenSpeed=self.speed)
-                        objects.append(new_object)
-                        objects[-1].show()
 
-                    elif object.gone():
+                    if object.gone():
+                        if name == 'enemy':
+                            print(objects[0],objects[1])
                         
+                        #print(objects[0],objects[1])
                         objects.remove(object)
                         new_object=random.choice(object_options)(x=new_x,screenSpeed=self.speed)
                         objects.append(new_object)
+                        
+                        if name == 'enemy':
+                            print(objects[0],objects[1])
+                        
+                        #print(objects[0],objects[1])
                         objects[-1].show()
                     else: object.show()
-                            
 
             else:
                 if objects.gone():
@@ -508,7 +513,9 @@ speed=0
 time=0
 score=0000
 
+score_font = pygame.font.Font('freesansbold.ttf', 14)
 font_color = (0, 0, 0)
+font_location = (480, 10)
 dead=True
 
 
@@ -528,8 +535,9 @@ def start(on_screen):
     dead = False
     on_screen.runner.y=85
     on_screen.runner.hitbox_update()
-    on_screen.enemies.pop(0)
-    on_screen.enemies.append(random.choice(on_screen.enemy_options)(x=800,screenSpeed=speed))
+    for cactus in on_screen.enemies:
+        if cactus.x<800 and cactus.x>-60:
+            cactus.x=800
 
 
     return speed, dead
@@ -553,7 +561,7 @@ while running:
             running = False
 
         if event.type == pygame.KEYDOWN: # Key is pressed
-            if keys[pygame.K_SPACE] or keys[pygame.K_UP] : # if space or up is pressed
+            if keys[pygame.K_SPACE] or keys[pygame.K_UP] or keys[pygame.K_w] : # if space or up is pressed
                 
                 if speed == 0: #reset after death
                     resrart=start
@@ -565,8 +573,13 @@ while running:
 
                 walking=on_screen.runner.jump_frame
 
-            elif keys[pygame.K_DOWN]: # if down arrow is pressed
+            elif keys[pygame.K_DOWN]or keys[pygame.K_s]:
+                if speed == 0: #reset after death
+                    resrart=start
+                    on_screen.runner.direction='crouch'
                 walking=on_screen.runner.crouch
+                print(on_screen.runner.direction)
+                print(walking)
 
         else: walking=on_screen.runner.walk
         if pygame.mouse.get_pressed()[0] : # if mouse clicked
@@ -594,11 +607,6 @@ while running:
         on_screen.runner.jump()
         if (time//5-time/5)==0:
             walking()
-            if (time//10-time/10)==0:
-                for x in on_screen.enemies:
-                    try:
-                        x.fly()
-                    except:pass
             score+=1
             speed+=0.1
         
@@ -621,11 +629,13 @@ while running:
     on_screen.show_all()
     on_screen.hitboxes() #debugging hitboxes
 
+    # cactus Hitboxes
+    '''    objects=[Background(),Ground(),CactusBigSingle(x=100),CactusQuartet(x=170),CactusSmallDuo(x=250),CactusSmallSingle(x=500),CactusSmallTriad(x=50),BirdHigh(x=320),BirdMiddle(x=380),BirdLow(x=450)]
+    for object in objects:
+                object.show()
+                object.hitbox_draw((255,0,0))'''
     
-    screen.blit(pygame.font.Font('freesansbold.ttf', 14).render(f"HI: {str(highScore).zfill(5)} {str(score).zfill(5)}", True, font_color), (480, 10))
-
-    if dead:
-        screen.blit(pygame.font.Font('freesansbold.ttf', 20).render("Press Space/Up or Click to Start", True, font_color), (150, 70))
+    screen.blit(score_font.render(f"HI: {str(highScore).zfill(5)} {str(score).zfill(5)}", True, font_color), font_location)
     # update screen
     pygame.display.flip()
     
