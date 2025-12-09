@@ -128,6 +128,7 @@ class OnScreen:
         self.screenSpeed=screenSpeed
         self.speedModifier=speedModifier
         self.rect=rect
+        self.hitbox=rect
         self.hitbox_update()
         
 
@@ -219,17 +220,24 @@ class OnScreen:
 
 
 class PowerUp(OnScreen):
-    def __init__(self, name="powerup", x=100, y=20, image='resources/light_neutral.png', firstImage='resources/light_neutral.png', secondaryImage='resources/light_neutral.png', screenSpeed=0, speedModifier=1, rect=None, state=False, sound=None,scale=1):
+    def __init__(self, name="powerup", x=1000, y=20, image='resources/light_neutral.png', firstImage='resources/light_neutral.png', secondaryImage='resources/light_neutral.png', screenSpeed=0, speedModifier=1, rect=None, state=False, sound=None,scale=1):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.state=state
         self.sound=sound
+
+    def show(self):
+        if self.state == True:
+            self.move()
+            screen.blit(self.image,(self.x,self.y))
+     
 
     @abstractmethod
     def effect(self,theme):
         pass
 
+
 class Runner(OnScreen):
-    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[[12,11,20,42],[12,11,41,20]],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',jump_sound=None,death_sound=None):
+    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[[12,11,20,42],[12,11,41,20]],crouchRect=[11,30,41,20],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',jump_sound=None,death_sound=None):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.jumpHeight=jumpHeight
         self.state=state
@@ -241,21 +249,24 @@ class Runner(OnScreen):
         self.crouch2=pygame.image.load(crouch2)
         self.jump_sound=jump_sound
         self.death_sound=death_sound
-        
-    def hitbox_update(self,num=0): #adjust hitbox position to account for movement
+        self.crouchRect=crouchRect
+    '''   
+    def hitbox_update(self): #adjust hitbox position to account for movement
         # hitbox key: [x offset, y offset, width, height]
-        if num == 0:
-                self.hitbox=[pygame.rect.Rect(self.x+self.rect[0][0],self.y+self.rect[0][1],self.rect[0][2],self.rect[0][3]),pygame.rect.Rect(self.x+self.rect[1][0],self.y+self.rect[1][1],self.rect[1][2],self.rect[1][3])]
-        elif num == 1:
-            self.hitbox=[pygame.rect.Rect(self.x+12,self.y+40,41,20)]
+        if self.direction == 'crouch':
+                rect=self.crouchRect
+        else:
+            rect=self.rect
+        
+        self.hitbox=[]
+        for i in range(len(self.rect)):
+            self.hitbox.append(pygame.rect.Rect(self.x+rect[i][0],self.y+rect[i][1],rect[i][2],rect[i][3]))
+           '''
+        
 
     def move(self):
             speed=self.screenSpeed*self.speedModifier
             self.x-=speed
-            if self.direction == 'crouch':
-                self.hitbox_update(1)
-            else:
-                self.hitbox_update()
 
     def jump_frame(self):
         self.image=self.firstImage
@@ -273,6 +284,7 @@ class Runner(OnScreen):
             if self.y!=85.0:
                 self.image=self.firstImage
             else: self.image=self.crouch1
+            
     def die(self):
         if self.death_sound!=None:
             pygame.mixer.sound.play(pygame.mixer.Sound(self.death_sound))
@@ -467,16 +479,11 @@ class Theme:
                 for object in objects:
 
                     if object.gone():
-                        if name == 'enemy':
-                            print(objects[0],objects[1])
                         
-                        #print(objects[0],objects[1])
                         objects.remove(object)
                         new_object=random.choice(object_options)(x=new_x,screenSpeed=self.speed)
                         objects.append(new_object)
                         
-                        if name == 'enemy':
-                            print(objects[0],objects[1])
                         
                         #print(objects[0],objects[1])
                         objects[-1].show()
@@ -553,6 +560,8 @@ while running:
     time+=1
     resrart=temp
 
+    if on_screen.runner.direction=='crouch':
+        on_screen.runner.direction='crouch'
 
     for event in pygame.event.get():
         keys = pygame.key.get_pressed()
@@ -576,12 +585,13 @@ while running:
             elif keys[pygame.K_DOWN]or keys[pygame.K_s]:
                 if speed == 0: #reset after death
                     resrart=start
-                    on_screen.runner.direction='crouch'
+                on_screen.runner.direction='crouch'
                 walking=on_screen.runner.crouch
                 print(on_screen.runner.direction)
                 print(walking)
 
         else: walking=on_screen.runner.walk
+
         if pygame.mouse.get_pressed()[0] : # if mouse clicked
             if speed == 0: #reset after death
                     resrart=start
@@ -590,6 +600,8 @@ while running:
             elif on_screen.runner.y==85:
                     on_screen.runner.direction='up'
                     on_screen.runner.jumping_sound()
+        
+        
                     
     # collision detection
 
@@ -602,6 +614,8 @@ while running:
         walking=on_screen.runner.jump_frame
 
     # seperate frame rate dependent movement
+        
+   
         
     if speed != 0:
         on_screen.runner.jump()
@@ -627,13 +641,11 @@ while running:
 
     on_screen.change_speed(speed)
     on_screen.show_all()
-    on_screen.hitboxes() #debugging hitboxes
 
-    # cactus Hitboxes
-    '''    objects=[Background(),Ground(),CactusBigSingle(x=100),CactusQuartet(x=170),CactusSmallDuo(x=250),CactusSmallSingle(x=500),CactusSmallTriad(x=50),BirdHigh(x=320),BirdMiddle(x=380),BirdLow(x=450)]
-    for object in objects:
-                object.show()
-                object.hitbox_draw((255,0,0))'''
+    if walking == on_screen.runner.crouch:
+        on_screen.runner.direction='crouch'
+
+    on_screen.hitboxes() #debugging hitboxes
     
     screen.blit(score_font.render(f"HI: {str(highScore).zfill(5)} {str(score).zfill(5)}", True, font_color), font_location)
     # update screen

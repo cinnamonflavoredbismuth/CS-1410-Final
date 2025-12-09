@@ -1,3 +1,1 @@
-
-    for object in objects:
-                object.show()
+self.y>(149-self.jumpHeight) and 
