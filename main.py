@@ -282,16 +282,14 @@ class Runner(OnScreen):
         if self.image==self.frame1 and self.y==85.0:
             self.image=self.frame2
         else:
-            if self.y!=85.0:
-                self.image=self.firstImage
-            else: self.image=self.frame1
+            if self.y==85.0:
+                self.image=self.frame1
     def crouch(self):
         if self.image==self.crouch1 and self.y==85.0:
             self.image=self.crouch2
         else:
-            if self.y!=85.0:
-                self.image=self.firstImage
-            else: self.image=self.crouch1
+            if self.y==85.0:
+                self.image=self.crouch1
     def die(self):
         if self.death_sound!=None:
             pygame.mixer.Sound.play(pygame.mixer.Sound(self.death_sound))
@@ -533,6 +531,9 @@ class Theme:
                 object.hitbox_draw(color)
 
 #       ''' 
+
+
+
 on_screen = Theme()
 on_screen.runner.direction=None
 running = True
@@ -592,7 +593,7 @@ while running:
 
                 walking=on_screen.runner.jump_frame
 
-            elif keys[pygame.K_DOWN]: # if down arrow is pressed
+            elif keys[pygame.K_DOWN] or keys[pygame.K_s]: # if down arrow is pressed
                 
                 walking=on_screen.runner.crouch
 
@@ -605,6 +606,8 @@ while running:
             elif on_screen.runner.y==85:
                     on_screen.runner.direction='up'
                     on_screen.runner.jumping_sound()
+
+            walking=on_screen.runner.jump_frame
                     
     # collision detection
 
@@ -617,6 +620,9 @@ while running:
         resrart=dead_restart if resrart != start else resrart
 
     # seperate frame rate dependent movement
+        
+    if on_screen.runner.y==85 and walking != on_screen.runner.crouch:
+        walking=on_screen.runner.walk
         
     if speed != 0:
         on_screen.runner.jump()
@@ -661,7 +667,7 @@ while running:
     screen.blit(pygame.font.Font('freesansbold.ttf', 14).render(f"HI: {str(highScore).zfill(5)} {str(score).zfill(5)}", True, font_color), (480, 10))
 
     if dead:
-        screen.blit(pygame.font.Font('freesansbold.ttf', 20).render("Press Space/Up or Click to Start", True, font_color), (150, 70))
+        screen.blit(pygame.font.Font('freesansbold.ttf', 20).render("Press Space/Up/W or Click to Start, and S/down to Crouch", True, font_color), (15, 70))
     # update screen
     pygame.display.flip()
     
