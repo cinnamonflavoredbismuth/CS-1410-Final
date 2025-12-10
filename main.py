@@ -240,7 +240,7 @@ class PowerUp(OnScreen):
         pass
 
 class Runner(OnScreen):
-    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[[12,31,15,12],[22,31,15,22],[32,11,21,20]],crouchRect = [[12,30,41,20],[12,30,41,20],[12,30,41,20]],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',jump_sound=None,death_sound=None):
+    def __init__(self, name='dino', x=0, y=85, image="resources/light_neutral.png", firstImage="resources/light_neutral.png", secondaryImage="resources/dark_neutral.png", frame1='resources/light_right.png',frame2='resources/light_left.png',crouch1='resources/light_crouch_right.png',crouch2='resources/light_crouch_left.png',screenSpeed=0, speedModifier=0, rect=[[12,31,15,12],[22,31,15,22],[32,11,21,20]],crouchRect = [[12,30,41,20],[12,30,41,20],[12,30,41,20]],jumpHeight=155,state=True,invincible=False,scale=1,direction='up',jump_sound='resources/jump.mp3',death_sound='resources/die.mp3'):
         super().__init__(name, x, y, image, firstImage, secondaryImage, screenSpeed, speedModifier, rect,scale)
         self.jumpHeight=jumpHeight
         self.state=state
@@ -294,7 +294,7 @@ class Runner(OnScreen):
             else: self.image=self.crouch1
     def die(self):
         if self.death_sound!=None:
-            pygame.mixer.sound.play(pygame.mixer.Sound(self.death_sound))
+            pygame.mixer.Sound.play(pygame.mixer.Sound(self.death_sound))
         else:
             print("death")
         return True
@@ -323,7 +323,7 @@ class Runner(OnScreen):
 
     def jumping_sound(self):
         if self.jump_sound!=None:
-            pygame.mixer.sound.play(pygame.mixer.Sound(self.jump_sound))
+            pygame.mixer.Sound.play(pygame.mixer.Sound(self.jump_sound))
         else:
             print("jump")
 
@@ -654,7 +654,10 @@ while running:
 
     
 
+    if score//100==score/100 and score != 0 and not pygame.mixer.get_busy():
+        pygame.mixer.Sound.play(pygame.mixer.Sound('resources/point.mp3'))
 
+    
     screen.blit(pygame.font.Font('freesansbold.ttf', 14).render(f"HI: {str(highScore).zfill(5)} {str(score).zfill(5)}", True, font_color), (480, 10))
 
     if dead:
