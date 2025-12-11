@@ -1,1 +1,2 @@
-self.y>(149-self.jumpHeight) and 
+import random
+from classes import *
